@@ -2,6 +2,7 @@
     <div class="container">
         <!-- Título del componente padre -->
         <h1 class="text-center my-4">Componente Padre</h1>
+        <h2 v-if="mensaje">{{ mensaje }}</h2>
         <!-- Componente hijo con un prop y un evento personalizado -->
         <Hijo :mensaje="mensajePadre" @actualizarMensaje="mensajePadre =
             $event" />
@@ -17,13 +18,12 @@
             <h2>Lista de tareas</h2>
             <div v-for="(tarea, index) in tareas" :key="index" class="form-check">
                 <!-- Checkbox vinculado a la propiedad completada de cada tarea -->
-                <input type="checkbox" v-model="tarea.completada" :id="'tarea' +
-            index" class="form-check-input">
-                <label :for="'tarea' + index" class="form-check-label">{{
-            tarea.nombre }}</label>
+                <input type="checkbox" v-model="tarea.completada" :id="'tarea' + index" class="form-check-input"
+                    @change="actualizarTarea(index)">
+                <label :for="'tarea' + index" class="form-check-label">{{ tarea.nombre }}</label>
+
                 <!-- Mensaje condicional que se muestra cuando la tarea está completada -->
-                <p v-if="tarea.completada" class="text-success">¡Tarea
-                    completada!</p>
+                <p v-if="tarea.completada" class="text-success">¡Tarea completada!</p>
             </div>
         </div>
     </div>
@@ -38,17 +38,50 @@ export default {
     data() {
         return {
             mensajePadre: 'Hola desde el padre', // Mensaje inicial del padre
-            tareas: [ // Lista inicial de tareas
-                { nombre: 'Tarea 1', completada: false },
-                { nombre: 'Tarea 2', completada: false },
-                { nombre: 'Tarea 3', completada: false }
-            ]
+            tareas: [],
+            mensaje: "",
         }
     },
     methods: {
+        fetchTareas() {
+            fetch('http://localhost:3005/tareas')
+                .then(response => response.json())
+                .then(data => {
+                    this.tareas = data;
+                });
+        },
+        actualizarTarea(index) {
+            fetch('http://localhost:3005/tareas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    index: index,
+                    completada: this.tareas[index].completada
+                }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(`Tarea ${index} actualizada:
+                    ${data.completada}`);
+                });
+        },
+        obtenerMensaje() {
+            fetch('http://localhost:3005/hello')
+                .then(response => response.text())
+                .then(data => {
+                    this.mensaje = data;
+                });
+        },
         resetearMensaje() {
             this.mensajePadre = 'Hola desde el padre'; // Método para resetear el mensaje del padre
         }
+    },
+    created() {
+        this.obtenerMensaje();
+        this.fetchTareas();
     }
+
 }
 </script>
